@@ -1,0 +1,191 @@
+{
+  "name": "3-Build-an-Agent-with-RAG-Part-2",
+  "nodes": [
+    {
+      "parameters": {
+        "public": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.5,
+      "position": [
+        0,
+        0
+      ],
+      "id": "eb852960-130d-4d1a-8dd4-b0de50e983e0",
+      "name": "When chat message received",
+      "webhookId": "7f492b03-4adb-44bf-872a-0938e26df0d2"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "You are an educational assistant specialized in the course content.\n\nAlways use the Supabase Vector Store tool to search for relevant information before answering questions about the course.\n\nBase your answers on the retrieved documents. Do not invent information.\n\nRespond in the same language as the user's question.\n\nWhenever possible, mention the chapter name from the document metadata.\n\nIf the retrieved documents do not contain enough information, clearly explain that the answer was not found in the course material."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        224,
+        0
+      ],
+      "id": "3888343d-0db1-4a71-ad0f-292f819c861d",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        96,
+        208
+      ],
+      "id": "9fe61045-f5cd-4403-8844-bdc8fff708c7",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "JaCkSKl11STrcKdi",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        240,
+        208
+      ],
+      "id": "778136d4-4971-40ea-bd7f-decbb6bc0a1c",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Search the course chapters stored in Supabase to find relevant information and answer questions about the course content. Always use this tool for course-related questions.",
+        "tableName": {
+          "__rl": true,
+          "value": "documents",
+          "mode": "list",
+          "cachedResultName": "documents"
+        },
+        "topK": 5,
+        "options": {
+          "queryName": "match_documents"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.4,
+      "position": [
+        -416,
+        -272
+      ],
+      "id": "cff84e2c-370b-4a5e-8667-6fd74a0a9540",
+      "name": "Supabase Vector Store",
+      "credentials": {
+        "supabaseApi": {
+          "id": "fCHsRc9BRS0Sr7AD",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -336,
+        -64
+      ],
+      "id": "ac499993-80df-4867-95ac-02631ea1b027",
+      "name": "Embeddings OpenAI",
+      "credentials": {
+        "openAiApi": {
+          "id": "JaCkSKl11STrcKdi",
+          "name": "OpenAI account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase Vector Store": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Supabase Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "8df8dce5-7795-4f67-93a7-19acb6b8e03d",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "47034bf6945518ac3997c2b5140c7d466d6300b011e3a28d6df012d98218e394"
+  },
+  "nodeGroups": [],
+  "id": "vftOGqVtuL3SJAOi",
+  "tags": []
+}

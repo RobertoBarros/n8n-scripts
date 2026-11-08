@@ -1,0 +1,179 @@
+{
+  "name": "3-Build-an-Agent-with-RAG-Part-1",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "51d744cb-f71a-45ba-8321-58a19a5eca37",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "appwzKeq61otRIlEY",
+          "mode": "list",
+          "cachedResultName": "D1C2 - Le Wagon",
+          "cachedResultUrl": "https://airtable.com/appwzKeq61otRIlEY"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblJFVHpQOoMIhJlE",
+          "mode": "list",
+          "cachedResultName": "Course chapters",
+          "cachedResultUrl": "https://airtable.com/appwzKeq61otRIlEY/tblJFVHpQOoMIhJlE"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        224,
+        0
+      ],
+      "id": "1bcb5761-a358-4f6d-8372-e3748bfbdb17",
+      "name": "Search records",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "X51PzqYtk48PtOVy",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "tableName": {
+          "__rl": true,
+          "value": "documents",
+          "mode": "list",
+          "cachedResultName": "documents"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.4,
+      "position": [
+        448,
+        0
+      ],
+      "id": "d723afb0-35f0-41fd-8058-d5c82d7d921c",
+      "name": "Supabase Vector Store",
+      "credentials": {
+        "supabaseApi": {
+          "id": "fCHsRc9BRS0Sr7AD",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        304,
+        224
+      ],
+      "id": "457ec2d4-3f8a-4d8f-b249-2a27f98a5e36",
+      "name": "Embeddings OpenAI",
+      "credentials": {
+        "openAiApi": {
+          "id": "JaCkSKl11STrcKdi",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonMode": "expressionData",
+        "jsonData": "={{ $json.fields['Full content'] }}",
+        "options": {
+          "metadata": {
+            "metadataValues": [
+              {
+                "name": "chapter",
+                "value": "={{ $json.fields.Chapter }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [
+        592,
+        208
+      ],
+      "id": "ff9da2fd-049a-4b96-b612-9fc3f94838b9",
+      "name": "Default Data Loader"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Search records",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search records": {
+      "main": [
+        [
+          {
+            "node": "Supabase Vector Store",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Supabase Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Default Data Loader": {
+      "ai_document": [
+        [
+          {
+            "node": "Supabase Vector Store",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "02caeb02-7aaf-4a80-9faf-60864f5369a7",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "47034bf6945518ac3997c2b5140c7d466d6300b011e3a28d6df012d98218e394"
+  },
+  "nodeGroups": [],
+  "id": "xbP0Vjq45hw10744",
+  "tags": []
+}

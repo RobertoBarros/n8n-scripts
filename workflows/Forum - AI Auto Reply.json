@@ -1,0 +1,223 @@
+{
+  "name": "Forum - AI Auto Reply",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "authentication": "airtableTokenApi",
+        "baseId": {
+          "__rl": true,
+          "value": "appwzKeq61otRIlEY",
+          "mode": "id"
+        },
+        "tableId": {
+          "__rl": true,
+          "value": "tbld8crmIcDlcf3YL",
+          "mode": "id"
+        },
+        "triggerField": "Timestamp",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.airtableTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "5ef50456-64ea-4c61-8b34-25a489b8e5ad",
+      "name": "Airtable Trigger",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "X51PzqYtk48PtOVy",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a helpful teaching assistant for an AI Product Builder course.\n\nAnswer the student's forum question clearly and concisely.\nProvide practical guidance and examples when appropriate.\nIf you don't know the answer, say so.\n\nStudent question:\n{{ $json.fields[\"Post content\"] }}\n\nRespond in the same language as the student.",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        224,
+        0
+      ],
+      "id": "297e991e-fc60-434d-9e0d-dbdad2793e03",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        160,
+        208
+      ],
+      "id": "4b2dc539-4f95-40ad-bb65-407c161bc61a",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "JaCkSKl11STrcKdi",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "value": "appwzKeq61otRIlEY",
+          "mode": "list",
+          "cachedResultName": "D1C2 - Le Wagon",
+          "cachedResultUrl": "https://airtable.com/appwzKeq61otRIlEY"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblTOhs4ig111Qkb6",
+          "mode": "list",
+          "cachedResultName": "Comments",
+          "cachedResultUrl": "https://airtable.com/appwzKeq61otRIlEY/tblTOhs4ig111Qkb6"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Comment content": "={{ $json.text }}",
+            "Post": "={{ [$('Airtable Trigger').item.json.id] }}",
+            "Comment author": "={{ [\"recn7bRmfq8JMCzcq\"] }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Comment content",
+              "displayName": "Comment content",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Post",
+              "displayName": "Post",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Comment author",
+              "displayName": "Comment author",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Timestamp",
+              "displayName": "Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        640,
+        16
+      ],
+      "id": "52be9840-406f-46ca-b9a2-7d1556916eb3",
+      "name": "Create a record",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "X51PzqYtk48PtOVy",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Airtable Trigger": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Create a record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "02c03030-ef89-4dc3-b066-a107651d42de",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "47034bf6945518ac3997c2b5140c7d466d6300b011e3a28d6df012d98218e394"
+  },
+  "nodeGroups": [],
+  "id": "aoj5PYyL58aP2DHz",
+  "tags": []
+}

@@ -1,0 +1,224 @@
+{
+  "name": "2-Build-your-first-AI-Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "public": true,
+        "initialMessages": "Olá! Sou seu assistente de Biologia. Qual é a sua dúvida sobre o curso?",
+        "options": {
+          "subtitle": "Vamos conversar?",
+          "title": "Olá! 👋"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.5,
+      "position": [
+        0,
+        0
+      ],
+      "id": "da315dc0-8b08-410b-9196-b0977de9e241",
+      "name": "When chat message received",
+      "webhookId": "9b52748d-f5a1-4b0c-936d-c71bd4fb650b"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": " You are an expert biology course assistant. Help students understand the course using only information retrieved from Airtable.\n\nSTRICT RULES:\n- Never answer course questions using your own knowledge.\n- Always use the available tools for course-related questions.\n- For greetings, respond naturally without tools.\n- If the retrieved content does not contain the answer, say so.\n\nTOOLS:\n- Find_Chapters: Lists chapters, summaries, and Record IDs.\n- Get_Chapter_Content: Retrieves the full content of a chapter using its Record ID.\n\nPROCESS:\n1. Call Find_Chapters to identify relevant chapters.\n2. Select 1 to 3 chapters based on the question.\n3. Call Get_Chapter_Content for each selected chapter using its exact Record ID.\n4. Answer clearly using only the retrieved content.\n5. Respond in the same language as the student."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        384,
+        0
+      ],
+      "id": "abdaa353-a05d-4289-8940-cb64999297e5",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        256,
+        208
+      ],
+      "id": "7f5decf1-02db-4fb7-9196-a7342edce07a",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "JaCkSKl11STrcKdi",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        464,
+        256
+      ],
+      "id": "86527541-49df-416f-a64b-062f338b6970",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Use this tool to list all available course chapters with their names and summaries. Use it before retrieving full chapter content.",
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "appwzKeq61otRIlEY",
+          "mode": "list",
+          "cachedResultName": "D1C2 - Le Wagon",
+          "cachedResultUrl": "https://airtable.com/appwzKeq61otRIlEY"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblJFVHpQOoMIhJlE",
+          "mode": "list",
+          "cachedResultName": "Course chapters",
+          "cachedResultUrl": "https://airtable.com/appwzKeq61otRIlEY/tblJFVHpQOoMIhJlE"
+        },
+        "options": {
+          "fields": [
+            "Chapter",
+            "Summary",
+            "Chapter ID"
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.airtableTool",
+      "typeVersion": 2.2,
+      "position": [
+        736,
+        128
+      ],
+      "id": "ecefa657-bebd-4cba-8ca4-93ebd55b156e",
+      "name": "Find_Chapters",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "X51PzqYtk48PtOVy",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Use this tool to retrieve the full content of a specific course chapter. Requires the exact Record ID returned by the Find_Chapters tool.",
+        "base": {
+          "__rl": true,
+          "value": "appwzKeq61otRIlEY",
+          "mode": "list",
+          "cachedResultName": "D1C2 - Le Wagon",
+          "cachedResultUrl": "https://airtable.com/appwzKeq61otRIlEY"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblJFVHpQOoMIhJlE",
+          "mode": "list",
+          "cachedResultName": "Course chapters",
+          "cachedResultUrl": "https://airtable.com/appwzKeq61otRIlEY/tblJFVHpQOoMIhJlE"
+        },
+        "id": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Record_ID', ``, 'string') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtableTool",
+      "typeVersion": 2.2,
+      "position": [
+        592,
+        256
+      ],
+      "id": "10343a28-22ff-4279-87ce-965203358f58",
+      "name": "Get_Chapter_Content",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "X51PzqYtk48PtOVy",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find_Chapters": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get_Chapter_Content": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "f69ee04c-ed31-472f-aff6-56538bf82426",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "47034bf6945518ac3997c2b5140c7d466d6300b011e3a28d6df012d98218e394"
+  },
+  "nodeGroups": [],
+  "id": "trFu7Mg9UBjIB2dZ",
+  "tags": []
+}

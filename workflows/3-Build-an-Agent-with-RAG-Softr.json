@@ -1,0 +1,968 @@
+{
+  "name": "3-Build-an-Agent-with-RAG-Softr",
+  "nodes": [
+    {
+      "parameters": {
+        "public": true,
+        "mode": "webhook",
+        "options": {
+          "responseMode": "responseNode"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.5,
+      "position": [
+        0,
+        96
+      ],
+      "id": "42988cd5-8488-480c-b011-278eafb46d61",
+      "name": "When chat message received",
+      "webhookId": "8f6990a6-0603-4566-b8cf-3404311bffbd"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json[\"User message\"] }}",
+        "options": {
+          "systemMessage": "You are an educational assistant specialized in the course content.\n\nAlways use the Supabase Vector Store tool to search for relevant information before answering questions about the course.\n\nBase your answers on the retrieved documents. Do not invent information.\n\nRespond in the same language as the user's question.\n\nWhenever possible, mention the chapter name from the document metadata.\n\nIf the retrieved documents do not contain enough information, clearly explain that the answer was not found in the course material."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        512,
+        96
+      ],
+      "id": "ad77c087-a599-4065-b5e8-1650ecb1fdc1",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        464,
+        336
+      ],
+      "id": "e0cb5631-6178-4a7f-b497-a8a016439703",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "JaCkSKl11STrcKdi",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "= {{ $('When chat message received').first().json.sessionId }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        592,
+        336
+      ],
+      "id": "cb711959-c43a-4830-b1a8-0bed29bf6acd",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Search the course chapters stored in Supabase to find relevant information and answer questions about the course content. Always use this tool for course-related questions.",
+        "tableName": {
+          "__rl": true,
+          "value": "documents",
+          "mode": "list",
+          "cachedResultName": "documents"
+        },
+        "topK": 5,
+        "options": {
+          "queryName": "match_documents"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.4,
+      "position": [
+        720,
+        336
+      ],
+      "id": "45edfb9f-cd57-419e-b151-9b5d63964192",
+      "name": "Supabase Vector Store",
+      "credentials": {
+        "supabaseApi": {
+          "id": "fCHsRc9BRS0Sr7AD",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        800,
+        544
+      ],
+      "id": "bb1dcd00-2e33-4598-9250-c81073cf5e11",
+      "name": "Embeddings OpenAI",
+      "credentials": {
+        "openAiApi": {
+          "id": "JaCkSKl11STrcKdi",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e12fcabe-e45d-495b-b660-3c14387d90d3",
+              "name": "Start time",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            },
+            {
+              "id": "8dd36236-5896-417f-abeb-d432157bc3e5",
+              "name": "Session ID",
+              "value": "={{ $json.sessionId }}",
+              "type": "string"
+            },
+            {
+              "id": "f4a8386b-1c35-4a4d-8ecb-b0f80e9e0ec3",
+              "name": "User message",
+              "value": "={{ $json.chatInput }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        224,
+        96
+      ],
+      "id": "410cd644-0767-4287-82d9-3c08f32fe5bf",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "81ac8c95-31ce-43cd-8013-1efac2c23c54",
+              "name": "AI answer",
+              "value": "={{ $('AI Agent').item.json.output}}",
+              "type": "string"
+            },
+            {
+              "id": "dc39eeaf-6543-43ae-afcd-9c53dd937be5",
+              "name": "Time to generate (ms)",
+              "value": "={{ Math.round(Date.now() - new Date($('Edit Fields').item.json['Start time']).getTime()) }}",
+              "type": "string"
+            },
+            {
+              "id": "c3abc941-01de-4884-84ba-29b602e06b75",
+              "name": "Session ID",
+              "value": "={{ $('When chat message received').first().json.sessionId }}",
+              "type": "string"
+            },
+            {
+              "id": "6f746316-93e6-4e6e-a37b-85301e930b8f",
+              "name": "Start time",
+              "value": "={{ $('Edit Fields').item.json['Start time'] }}",
+              "type": "string"
+            },
+            {
+              "id": "695d8407-7993-44f5-9262-0d8aba568c08",
+              "name": "User message",
+              "value": "={{ $('Edit Fields').item.json['User message'] }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1296,
+        96
+      ],
+      "id": "73f80269-3a4a-40a2-b7f2-47a379c5092e",
+      "name": "Prepare Message Data"
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "appwzKeq61otRIlEY",
+          "mode": "list",
+          "cachedResultName": "D1C2 - Le Wagon",
+          "cachedResultUrl": "https://airtable.com/appwzKeq61otRIlEY"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblzAyyzDdWoEPxvg",
+          "mode": "list",
+          "cachedResultName": "Conversations",
+          "cachedResultUrl": "https://airtable.com/appwzKeq61otRIlEY/tblzAyyzDdWoEPxvg"
+        },
+        "filterByFormula": "=\n{{ `AND(\n  {n8n session ID} = '${$('When chat message received').first().json.sessionId}',\n  FIND(\n    '${$('When chat message received').first().json.metadata.airtableRecordId}',\n    ARRAYJOIN({Record ID (from User)})\n  ) > 0\n)` }}\n",
+        "returnAll": false,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        1520,
+        96
+      ],
+      "id": "b3467da5-ab74-473c-838d-eb740416594a",
+      "name": "Search records",
+      "alwaysOutputData": true,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "X51PzqYtk48PtOVy",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 4
+          },
+          "conditions": [
+            {
+              "id": "2a0eac77-00a4-42cb-88c5-a18f83600bc0",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.4,
+      "position": [
+        1744,
+        96
+      ],
+      "id": "15920293-72d6-430c-bdc1-a8dede4fb306",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "value": "appwzKeq61otRIlEY",
+          "mode": "list",
+          "cachedResultName": "D1C2 - Le Wagon",
+          "cachedResultUrl": "https://airtable.com/appwzKeq61otRIlEY"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblzAyyzDdWoEPxvg",
+          "mode": "list",
+          "cachedResultName": "Conversations",
+          "cachedResultUrl": "https://airtable.com/appwzKeq61otRIlEY/tblzAyyzDdWoEPxvg"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "n8n session ID": "={{ $('When chat message received').first().json.sessionId }}\n",
+            "User": "={{ [$('When chat message received').first().json.metadata.airtableRecordId] }}\n\n"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Conversation ID",
+              "displayName": "Conversation ID",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "AI generated title",
+              "displayName": "AI generated title",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "n8n session ID",
+              "displayName": "n8n session ID",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Start time",
+              "displayName": "Start time",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Messages",
+              "displayName": "Messages",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Messages count",
+              "displayName": "Messages count",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Latest message time",
+              "displayName": "Latest message time",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "User",
+              "displayName": "User",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Email (from User)",
+              "displayName": "Email (from User)",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        1968,
+        192
+      ],
+      "id": "62fde734-fe64-45a8-964c-e40b00779d52",
+      "name": "Create Conversation",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "X51PzqYtk48PtOVy",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "766dc2b7-2f73-4cd5-859a-9f3dab75fcf9",
+              "name": "Conversation ID",
+              "value": "={{ $('Create Conversation').item.json.id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        2256,
+        96
+      ],
+      "id": "805d1ec6-0495-48d5-9243-41678e1b07b6",
+      "name": "New Conversation ID"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "89cec31e-7e90-4400-a0bb-16eb5e4d0e98",
+              "name": "Conversation ID",
+              "value": "={{ $json.id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        2256,
+        -96
+      ],
+      "id": "70b46b69-ae50-4866-b184-04910626e89f",
+      "name": "Existing Conversation ID"
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "value": "appwzKeq61otRIlEY",
+          "mode": "list",
+          "cachedResultName": "D1C2 - Le Wagon",
+          "cachedResultUrl": "https://airtable.com/appwzKeq61otRIlEY"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblv0dH0O05NJStVr",
+          "mode": "list",
+          "cachedResultName": "Messages",
+          "cachedResultUrl": "https://airtable.com/appwzKeq61otRIlEY/tblv0dH0O05NJStVr"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Message time": "={{ DateTime.fromISO($('Prepare Message Data').item.json['Start time']).toUTC().toISO() }}",
+            "User message": "={{ $('Prepare Message Data').item.json['User message'] }}",
+            "AI answer": "={{ $('Prepare Message Data').item.json['AI answer'] }}",
+            "Time to generate (ms)": "={{ $('Prepare Message Data').item.json['Time to generate (ms)'] }}",
+            "Conversation": "={{ [$json['Conversation ID']] }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Message ID",
+              "displayName": "Message ID",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Message time",
+              "displayName": "Message time",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "User message",
+              "displayName": "User message",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "AI answer",
+              "displayName": "AI answer",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Time to generate (ms)",
+              "displayName": "Time to generate (ms)",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Conversation",
+              "displayName": "Conversation",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        2544,
+        0
+      ],
+      "id": "24a05c28-bcb0-4da6-9945-0106536fc82a",
+      "name": "Save Message",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "X51PzqYtk48PtOVy",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4.1-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4.1-MINI"
+        },
+        "responses": {
+          "values": [
+            {
+              "content": "={{ `Generate a short, descriptive title (maximum 6 words) for this conversation. Return only the title, in the same language as the user message.\\n\\nUser message: ${$('Prepare Message Data').item.json['User message']}` }}"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        2192,
+        288
+      ],
+      "id": "1654fade-d612-4611-ac5a-fc3d7c5d3575",
+      "name": "Generate Conversation Title",
+      "credentials": {
+        "openAiApi": {
+          "id": "JaCkSKl11STrcKdi",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "value": "appwzKeq61otRIlEY",
+          "mode": "list",
+          "cachedResultName": "D1C2 - Le Wagon",
+          "cachedResultUrl": "https://airtable.com/appwzKeq61otRIlEY"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblzAyyzDdWoEPxvg",
+          "mode": "list",
+          "cachedResultName": "Conversations",
+          "cachedResultUrl": "https://airtable.com/appwzKeq61otRIlEY/tblzAyyzDdWoEPxvg"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $('Create Conversation').item.json.id }}",
+            "AI generated title": "={{ $('Generate Conversation Title').item.json.output[0].content[0].text }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": false
+            },
+            {
+              "id": "Conversation ID",
+              "displayName": "Conversation ID",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "AI generated title",
+              "displayName": "AI generated title",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "n8n session ID",
+              "displayName": "n8n session ID",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Start time",
+              "displayName": "Start time",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Messages",
+              "displayName": "Messages",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Messages count",
+              "displayName": "Messages count",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Latest message time",
+              "displayName": "Latest message time",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        2544,
+        288
+      ],
+      "id": "63c30271-b6b7-4504-947a-8e891301eab3",
+      "name": "Update Conversation Title",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "X51PzqYtk48PtOVy",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1072,
+        96
+      ],
+      "id": "0deaa847-b82c-4552-9700-c13152a9d67d",
+      "name": "Respond to Webhook"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase Vector Store": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Supabase Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Message Data": {
+      "main": [
+        [
+          {
+            "node": "Search records",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search records": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Existing Conversation ID",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create Conversation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Conversation": {
+      "main": [
+        [
+          {
+            "node": "New Conversation ID",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Generate Conversation Title",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "New Conversation ID": {
+      "main": [
+        [
+          {
+            "node": "Save Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Existing Conversation ID": {
+      "main": [
+        [
+          {
+            "node": "Save Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Conversation Title": {
+      "main": [
+        [
+          {
+            "node": "Update Conversation Title",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Conversation Title": {
+      "main": [
+        []
+      ]
+    },
+    "Respond to Webhook": {
+      "main": [
+        [
+          {
+            "node": "Prepare Message Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "607020a3-b3df-414b-a409-0d9c89c55d31",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "47034bf6945518ac3997c2b5140c7d466d6300b011e3a28d6df012d98218e394"
+  },
+  "nodeGroups": [],
+  "id": "NYUlRrYfU7wZo9U8",
+  "tags": []
+}
