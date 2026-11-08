@@ -14,7 +14,7 @@ n8n local com Docker Compose e acesso público via Cloudflare Tunnel.
 ./start.zsh
 ```
 
-Cria um túnel, atualiza as URLs no `compose.yml` e inicia o n8n em primeiro plano. A URL pública aparece no terminal e muda a cada execução.
+Cria um túnel, atualiza as URLs no `compose.yml` e inicia o n8n em primeiro plano. A URL pública aparece no terminal, é copiada para a área de transferência e muda a cada execução.
 
 O acesso local fica em http://localhost:5678. Para encerrar o n8n e o túnel, pressione `Ctrl+C`.
 

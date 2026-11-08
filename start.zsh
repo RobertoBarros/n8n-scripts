@@ -40,5 +40,6 @@ sed -i '' -E \
   "s#^(      (N8N_WEBHOOK_URL|N8N_EDITOR_BASE_URL):).*#\1 \"$tunnel_url/\"#" \
   compose.yml
 
-print "n8n: $tunnel_url"
+printf '%s' "$tunnel_url" | pbcopy
+print "n8n: $tunnel_url (URL copiada para a área de transferência)"
 docker compose up
